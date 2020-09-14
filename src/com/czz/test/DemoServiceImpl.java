@@ -8,7 +8,7 @@ package com.czz.test;
  */
 public class DemoServiceImpl implements DemoService {
     @Override
-    public String say() {
-        return "chenzhenzhen";
+    public String say(String name) {
+        return "你好"+name;
     }
 }

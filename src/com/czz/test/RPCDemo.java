@@ -30,7 +30,7 @@ public class RPCDemo {
     }
 
 
-    public static void export(int port, Object o){
+    public static void export(int port, Object service){
         try {
             BlockingQueue blockingQueue = new LinkedBlockingQueue();
             ExecutorService executorService =new ThreadPoolExecutor(
@@ -40,12 +40,26 @@ public class RPCDemo {
                     TimeUnit.SECONDS,
                     blockingQueue);
             ServerSocket serverSocket = new ServerSocket(port);
-            Socket socket = serverSocket.accept();
-            Thread thread = new Thread(new TaskDemo(socket, o));
-            thread.start();
-//            executorService.submit(new TaskDemo(socket, o));
 
-        } catch (IOException e) {
+           /* ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+
+            String methodName = input.readUTF();
+
+            Class<?>[] parameterTypes = (Class<?>[]) input.readObject(); //参数类型
+            Object[] arguments = (Object[]) input.readObject(); //参数
+            Method method = service.getClass().getMethod(methodName, parameterTypes);  //找到方法
+            Object result = method.invoke(service,arguments); //调用方法
+            //返回结果
+            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+            output.writeObject(result);
+
+
+
+//            Thread thread = new Thread(new TaskDemo(socket, o));
+//            thread.start();*/
+               executorService.submit(new TaskDemo(serverSocket, service));
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -54,28 +68,47 @@ public class RPCDemo {
 
 
 class TaskDemo implements Runnable{
-    private Socket socket;
-    private Object o;
 
-    public TaskDemo(Socket socket, Object o) {
-        this.socket = socket;
-        this.o = o;
+    private ServerSocket serverSocket;
+    private Object service;
+
+    public TaskDemo(ServerSocket serverSocket, Object service) {
+        this.serverSocket = serverSocket;
+        this.service = service;
     }
 
+    ObjectInputStream input = null;
+    ObjectOutputStream output = null;
     @Override
     public void run() {
         try {
-            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+            Socket socket = serverSocket.accept();
+            input = new ObjectInputStream(socket.getInputStream());
             String methodName = input.readUTF();
             Class<?>[] parameterTypes = (Class<?>[]) input.readObject(); //参数类型
             Object[] arguments = (Object[]) input.readObject(); //参数
-            Method method = socket.getClass().getMethod(methodName, parameterTypes);  //找到方法
-            Object result = method.invoke(o, arguments); //调用方法
+            Method method = service.getClass().getMethod(methodName, parameterTypes);  //找到方法
+            Object result = method.invoke(service, arguments); //调用方法
             //返回结果
             ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
             output.writeObject(result);
         } catch (Exception e) {
             e.printStackTrace();
+        }finally {
+            if (input != null){
+                try {
+                    input.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            if (output != null){
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

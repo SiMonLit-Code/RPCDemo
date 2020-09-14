@@ -10,9 +10,10 @@ import java.lang.reflect.Proxy;
  */
 public class Refer {
     public static void main(String[] args) {
-        Refer.refer(DemoService.class, "localhost", 8001);
-        new DemoServiceImpl().say();
+        DemoService demoService = Refer.refer(DemoService.class, "localhost", 8001);
+        System.out.println(demoService.say("cccccc"));
     }
+
     public static <T> T refer(Class<T> interfaceClass, String host, int port){
         return (T) Proxy.newProxyInstance(
                 interfaceClass.getClassLoader(),

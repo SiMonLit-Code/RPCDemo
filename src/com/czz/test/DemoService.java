@@ -7,5 +7,5 @@ package com.czz.test;
  * @description :
  */
 public interface DemoService {
-    String say();
+    String say(String name);
 }
